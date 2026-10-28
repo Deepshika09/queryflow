@@ -1,0 +1,153 @@
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: QueryFlow - AWS Serverless Inquiry Management System
+
+Parameters:
+  AdminToken:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    Description: Legacy deployment parameter retained for compatibility.
+
+Globals:
+  Function:
+    Runtime: python3.11
+    MemorySize: 128
+    Timeout: 10
+    LoggingConfig:
+      LogFormat: Text
+
+Resources:
+  InquiriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: QueryFlowInquiries
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      AttributeDefinitions:
+        - AttributeName: inquiryId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: inquiryId
+          KeyType: HASH
+
+  SubmitInquiryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: queryflow-submit-inquiry
+      Handler: app.handler
+      CodeUri: functions/submit_inquiry/
+      Environment:
+        Variables:
+          INQUIRIES_TABLE: !Ref InquiriesTable
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !GetAtt InquiriesTable.Arn
+      Events:
+        Submit:
+          Type: Api
+          Properties:
+            Path: /inquiries
+            Method: POST
+            RestApiId: !Ref QueryFlowApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        Options:
+          Type: Api
+          Properties:
+            Path: /inquiries
+            Method: OPTIONS
+            RestApiId: !Ref QueryFlowApi
+
+  GetInquiriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: queryflow-get-inquiries
+      Handler: app.handler
+      CodeUri: functions/get_inquiries/
+      Environment:
+        Variables:
+          INQUIRIES_TABLE: !Ref InquiriesTable
+          ADMIN_TOKEN: !Ref AdminToken
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource: !GetAtt InquiriesTable.Arn
+      Events:
+        MyInquiries:
+          Type: Api
+          Properties:
+            Path: /my/inquiries
+            Method: GET
+            RestApiId: !Ref QueryFlowApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        MyInquiriesOptions:
+          Type: Api
+          Properties:
+            Path: /my/inquiries
+            Method: OPTIONS
+            RestApiId: !Ref QueryFlowApi
+        AdminList:
+          Type: Api
+          Properties:
+            Path: /admin/inquiries
+            Method: GET
+            RestApiId: !Ref QueryFlowApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminOptions:
+          Type: Api
+          Properties:
+            Path: /admin/inquiries
+            Method: OPTIONS
+            RestApiId: !Ref QueryFlowApi
+
+  QueryFlowApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: queryflow-api
+      StageName: prod
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: arn:aws:cognito-idp:ap-southeast-2:119826412590:userpool/ap-southeast-2_JYN8tXOMG
+            Identity:
+              Header: Authorization
+      MethodSettings:
+        - DataTraceEnabled: false
+          MetricsEnabled: true
+          ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 10
+
+Outputs:
+  ApiUrl:
+    Description: Base URL of the QueryFlow API
+    Value: !Sub "https://${QueryFlowApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+
+  SubmitEndpoint:
+    Description: Endpoint to submit an inquiry
+    Value: !Sub "https://${QueryFlowApi}.execute-api.${AWS::Region}.amazonaws.com/prod/inquiries"
+
+  MyInquiriesEndpoint:
+    Description: Endpoint for the signed-in user's inquiries
+    Value: !Sub "https://${QueryFlowApi}.execute-api.${AWS::Region}.amazonaws.com/prod/my/inquiries"
+
+  AdminEndpoint:
+    Description: Endpoint for admins to retrieve all inquiries
+    Value: !Sub "https://${QueryFlowApi}.execute-api.${AWS::Region}.amazonaws.com/prod/admin/inquiries"
+
+  InquiriesTable:
+    Description: DynamoDB table storing inquiries
+    Value: !Ref InquiriesTable

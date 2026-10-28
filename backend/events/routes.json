@@ -1,0 +1,9 @@
+{
+  "description": "Local API Gateway configuration for `sam local start-api`.",
+  "routes": [
+    { "path": "/inquiries", "method": "POST", "function": "SubmitInquiryFunction" },
+    { "path": "/inquiries", "method": "OPTIONS", "function": "SubmitInquiryFunction" },
+    { "path": "/admin/inquiries", "method": "GET", "function": "GetInquiriesFunction" },
+    { "path": "/admin/inquiries", "method": "OPTIONS", "function": "GetInquiriesFunction" }
+  ]
+}

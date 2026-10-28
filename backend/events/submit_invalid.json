@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/inquiries",
+  "resource": "/inquiries",
+  "headers": {"Content-Type": "application/json"},
+  "body": "{\"name\":\"\",\"email\":\"not-an-email\",\"subject\":\"\",\"message\":\"\"}",
+  "isBase64Encoded": false
+}

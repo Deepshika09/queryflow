@@ -1,0 +1,12 @@
+
+{
+  "httpMethod": "POST",
+  "path": "/inquiries",
+  "resource": "/inquiries",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://d2o670fn9dzsau.cloudfront.net"
+  },
+  "body": "{\"name\":\"Ada Lovelace\",\"email\":\"ada@example.com\",\"subject\":\"Billing question\",\"message\":\"How do I update my payment method?\"}",
+  "isBase64Encoded": false
+}

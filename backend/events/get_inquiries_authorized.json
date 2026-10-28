@@ -1,0 +1,8 @@
+{
+  "httpMethod": "GET",
+  "path": "/admin/inquiries",
+  "resource": "/admin/inquiries",
+  "headers": {
+    "Authorization": "Bearer replace-with-your-admin-token"
+  }
+}
